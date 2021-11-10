@@ -76,7 +76,7 @@ if __name__ == '__main__':
         1. Es gibt eine __len__() Methode, die die Anzahl der Elemente des Datensatzes angibt und
         2. Es gibt eine __getitem_(int i) Methode, die das i'te Element zurückgibt
     """
-    dataset = MNIST(mnist_root, download=True)                          # Datensatzobjekt, lädt Datensatz runter
+    dataset = MNIST(mnist_root, download=True, train=True)                          # Datensatzobjekt, lädt Datensatz runter
     print(f'Länge des MNIST Datensatzes ist {dataset.__len__()}')
     image, label = dataset.__getitem__(0)
     plt.imshow(image)                                                   # Bildplot erstellen
@@ -136,58 +136,63 @@ if __name__ == '__main__':
         Linear:             Lineare Abbildung vom R^m nach R^n. m und n kann man natürlich wählen.
     """
     import torch.nn as nn
+
+    class Network_block(nn.Module):
+        def __init__(self, in_channels, out_channels, kernel_size = 3, do_maxpool = True):
+            """
+            Comment
+            """
+            super(Network_block, self).__init__() 
+            padding = kernel_size//2
+            self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, padding=padding)
+            self.activation1 = nn.ReLU()
+            self.conv2 = nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size, padding=padding)
+            self.activation2 = nn.ReLU()
+            self.do_maxpool = do_maxpool
+            if do_maxpool:
+                self.maxpool = nn.MaxPool2d(kernel_size=(2,2), stride=2)
+            else:
+                self.flatten = nn.Flatten()
+        def forward(self, x):
+            x = self.conv1(x)
+            x = self.activation1(x)
+            x = self.conv2(x)
+            x = self.activation2(x)
+            if self.do_maxpool:
+                x = self.maxpool(x)
+            else:
+                x = self.flatten(x)
+            return x
+
     class MNIST_Classifier(nn.Module):
         """
         Dies ist ein neuronales Netz!
         """
-        def __init__(self, output_dimension = 10):
+        def __init__(self, output_dimension = 10, channels = [16, 32, 64], linear_features = 10000):
             """
             In der __init__() Methode wird das Netz erstellt. Da wir von der nn.Module Klasse erben wird zunächst der super-Konstruktor aufgerufen.
             Anschließend definieren wir die Bausteine der Abbildung des Netzwerks.
             """
             super(MNIST_Classifier, self).__init__() 
+            self.channels = channels
+            self.block1 = Network_block(1, channels[0])
+            self.block2 = Network_block(channels[0], channels[1])
+            self.block3 = Network_block(channels[1], channels[2], do_maxpool=False)
 
-            self.conv11 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, padding=1)
-            self.activation11 = nn.ReLU()
-            self.conv12 = nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1)
-            self.activation12 = nn.ReLU()
-            self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-
-            self.conv21 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
-            self.activation21 = nn.ReLU()
-            self.conv22 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1)
-            self.activation22 = nn.ReLU()
-            self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2)
-
-            self.conv31 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
-            self.activation31 = nn.ReLU()
-            self.conv32 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-            self.activation32 = nn.ReLU()
-            self.flatten = nn.Flatten()
-
-            self.linear = nn.Linear(3136, output_dimension)
+            self.linear1 = nn.Sequential(nn.Linear(7*7*channels[-1], linear_features), nn.ReLU())
+            self.linear2 = nn.Linear(linear_features, output_dimension)
 
         def forward(self, x):
             """
             Dies ist die methode, welche das Netzwerk bei einem gegebenen Tensor auswertet!
             Man sieht, warum die Bezeichnung feedforward neural network üblich ist...
             """
-            x = self.conv11(x)
-            x = self.activation11(x)
-            x = self.conv12(x)
-            x = self.activation12(x)
-            x = self.maxpool1(x)
-            x = self.conv21(x)
-            x = self.activation21(x)
-            x = self.conv22(x)
-            x = self.activation22(x)
-            x = self.maxpool2(x)
-            x = self.conv31(x)
-            x = self.activation31(x)
-            x = self.conv32(x)
-            x = self.activation32(x)
-            x = self.flatten(x)
-            x = self.linear(x)
+            # x.size() == BATCH_SIZEx1x28*28
+            x = self.block1(x) # x.size() == BATCH_SIZExself.channels[0]x14*14
+            x = self.block2(x) # x.size() == BATCH_SIZExself.channels[1]x7*7
+            x = self.block3(x) # KEIN MAXPOOL!!! x.size() == BATCH_SIZExself.channels[2]x7*7 ---> BATCH_SIZE x self.channels[2]*7*7 Vektor
+            x = self.linear1(x)
+            x = self.linear2(x)
             return x
 
     """
@@ -234,9 +239,8 @@ if __name__ == '__main__':
         hier 'stochastic gradient descent' oder SGD. Die Optimierungsvariablen sind die Netzwerkparameter. 
         Die Schrittweite (oder bei dein KI Leuten 'Lernrate') des Algorithmus wählen wir als 0.02.
     """
-    from torch.optim.sgd import SGD
-    optimizer = SGD(net.parameters(), lr=0.02)
-
+    import torch.optim as opt
+    optimizer = opt.SGD(net.parameters(), lr=0.02)
     """
     Als Zielfunktion nehmen wir den CrossEntropy-Loss. Das ist eine Metrik auf diskreten Wahrscheinlichkeitsmaßen. 
     Wir versuchen also den Abstand der Ausgabewahrscheinlichkeitsverteilung und der Label-Wahrscheinlichkeitsverteilung zu minimieren.
@@ -249,16 +253,19 @@ if __name__ == '__main__':
     werten mit der Netzausgabe und den Labeln die Zielfunktion aus,
     berechnen die Ableitungen und machen einen Schritt im Gradientenverfahren
     """
+    import torch.backends.cudnn as cudnn
+    cudnn.benchmark = True
     epoch = 0
     step = 0
     running_loss = 0
-    max_epochs = 50
+    max_epochs = 20
     while epoch < max_epochs:
         train_dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, drop_last=True)
         for (images, labels) in train_dataloader:
             optimizer.zero_grad()
-            images = images.cuda()
-            labels = labels.cuda()
+            if torch.cuda.is_available():
+                images = images.cuda()
+                labels = labels.cuda()
 
             output = net(images)
             loss = objective(output, labels)
@@ -279,6 +286,23 @@ if __name__ == '__main__':
                 und torch.argmax (https://pytorch.org/docs/stable/generated/torch.argmax.html)
                 Teste diese methode mit Elementen des val-datensatzes.
     """
+    import torch.nn.functional as F
+    val_dataset = MNIST(mnist_root, download=True, train=False, transform=transforms.ToTensor())
+    correct = 0
+    wrong = 0
+    for (image, target) in val_dataset:
+        if torch.cuda.is_available():
+            image = image.cuda().unsqueeze(0)
+        out = net(image)
+        out = F.softmax(out) # x -> [e^x_i / sum_j(e^x_j)]
+        out = torch.argmax(out, dim=1).cpu().numpy()
+        print(F'Predicted class of input  image is {out[0]}, true label is {target}')
+        if out[0] == target:
+            correct += 1
+        else:
+            wrong += 1
+    print(F'Accuracy on val dataset is {1 - wrong/correct}')
+
 
 
 
