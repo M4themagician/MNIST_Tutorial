@@ -4,8 +4,8 @@ Am besten miniconda auf dem Server installieren! Dann kann man ganz entspannt Py
     1.1. Auf den server ssh'en (Putty + username@mercurius.math.uni-bremen.de, X-forwarding aktivieren)
     1.2. Lokaler Speicher liegt auf /localdata, also am besten sowas machen wie
         cd /localdata
-        mkdir Schmidtchen
-        cd Schmidtchen
+        mkdir $NACHNAME$ 
+        cd $NACHNAME$
     1.3. Ordner für Miniconda anlegen
         mkdir miniconda
         cd miniconda
@@ -22,11 +22,11 @@ Am besten miniconda auf dem Server installieren! Dann kann man ganz entspannt Py
         - Or specify a different location below
     
     Stattdessen dann
-        [/some/path/miniconda3] >>>  /localdata/Schmidtchen/miniconda/miniconda3
+        [/some/path/miniconda3] >>>  /localdata/$NACHNAME$/miniconda/miniconda3
 
     1.7. Nach install einmal checken ob alles geklappt hat:
         which python
-    sollte '/localdata/Schmidtchen/miniconda/miniconda3/bin/python' zurückgeben.
+    sollte '/localdata/$NACHNAME$/miniconda/miniconda3/bin/python' zurückgeben.
 """
 
 ### PYTORCH SETUP ###
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     """
     Erstmal ein paar Pakete importieren
     """
-    user = 'Evers'                                                       # pytorch
+    user = '$NACHNAME$'                                                 # pytorch
     from torchvision.datasets import MNIST                              # Datensatzklasse für MNIST, handled sogar das runterladen
     import os                                                           # für shellcommands aus python raus
     import matplotlib.pyplot as plt                                     # für visualisierung
@@ -191,10 +191,10 @@ if __name__ == '__main__':
             return x
 
     """
-    Aufgabe: Die Netztwerkdefinition ist so nicht schön. Besser wäre es, klar geblockte Bausteine (z.B. conv+Relu+conv+Relu+maxpool) in einem Untermodul zu definieren.
-    Implementiere eine Klasse 'conv_block', die genau das macht und definiere die Bausteine des Netzes dann über diese klasse.
     Aufgabe: Warum 3136 Eingangskanäle in der linear layer?
     Aufgabe: Wie groß sind die Tensoren nach jeder Faltung? 
+    Aufgabe: Die Netztwerkdefinition ist so nicht schön. Besser wäre es, klar geblockte Bausteine (z.B. conv+Relu+conv+Relu+maxpool) in einem Untermodul zu definieren.
+             Implementiere eine Klasse 'conv_block', die genau das macht und definiere die Bausteine des Netzes dann über diese klasse.
     Aufgabe: Füge eine weitere Aktivierungsfunktion und Lineare Abbildung ein, bevor der Ausgabevektor berechnet wird.
     """
 
@@ -215,11 +215,11 @@ if __name__ == '__main__':
     müssen wir dem Netz sagen, wie es damit umgehen soll. Da alles auf einer Maschine läuft, bietet sich sogenannter Datenparallelismus an:
     D.h. Das Netzwerk wird auf jede GPU gespiegelt und Netzauswertungen finden parallel auf jeer Grafikkarte statt.
     """
-    if torch.cuda.is_available():
+    if torch.cuda.is_available():                                                   # Check, ob CUDA fähige GPU verfügbar
         print(f'Cuda available, running on {torch.cuda.device_count()} GPUs!')
-        net.cuda()
-        if torch.cuda.device_count() > 1:
-            net = nn.DataParallel(net)
+        net.cuda()                                                                  # Netz auf Grafikkarte schieben.
+        if torch.cuda.device_count() > 1:                                           # Check, ob wir mehrere GPUs haben
+            net = nn.DataParallel(net)                                              # Wenn ja, Datenparallelismus!
 
     ################################################################################################################################
     ###### Training the network
@@ -272,12 +272,14 @@ if __name__ == '__main__':
         step = 0
 
     """
+    Aufgabe: Speichere die Gewichte des trainierten Netzwerkes. https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-model-for-inference
     Aufgabe: Definiere ein val_dataset Objekt (die __init__ des MNIST Datensatzes nimmt einem training= bool entgegen, der, falls False, den validierungsdatensatz zurückgibt).
                 Berechne alle 10 epochen des mittleren Wert des Zielfunktion auf dem Validierungsdatensatz.
     Aufgabe: Implementiere in der Netzwerkdefinition weiter oben eine predict methode. Diese soll zu einem eingabebild die prädizierte Klasse ausgeben.
                 Hinweis: Benutze dazu nn.Softmax (https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html) 
                 und torch.argmax (https://pytorch.org/docs/stable/generated/torch.argmax.html)
                 Teste diese methode mit Elementen des val-datensatzes.
+    Aufgabe: Berechne die Genauigkeit, Spezifität und Sensitivität des trainierten Netzes.
     """
 
 
