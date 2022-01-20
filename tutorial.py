@@ -1,7 +1,7 @@
 ### PYTHON SETUP ###
 """
 Am besten miniconda auf dem Server installieren! Dann kann man ganz entspannt Python Umgebungen verwalten. 
-    1.1. Auf den server ssh'en (Putty + username@mercurius.math.uni-bremen.de, X-forwarding aktivieren)
+    1.1. Auf den server ssh'en (Putty + username@serveradress, X-forwarding aktivieren)
     1.2. Lokaler Speicher liegt auf /localdata, also am besten sowas machen wie
         cd /localdata
         mkdir $NACHNAME$ 
