@@ -4,15 +4,15 @@ Am besten miniconda auf dem Server installieren! Dann kann man ganz entspannt Py
     1.1. Auf den server ssh'en (Putty + username@mercurius.math.uni-bremen.de, X-forwarding aktivieren)
     1.2. Lokaler Speicher liegt auf /localdata, also am besten sowas machen wie
         cd /localdata
-        mkdir Schmidtchen
-        cd Schmidtchen
+        mkdir username
+        cd username
     1.3. Ordner für Miniconda anlegen
         mkdir miniconda
         cd miniconda
     1.4. Miniconda runterladen (https://docs.conda.io/en/latest/miniconda.html)
-        wget https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh 
+        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
     1.5. ... und installieren
-        bash Miniconda3-py38_4.10.3-Linux-x86_64.sh
+        bash Miniconda3-latest-Linux-x86_64.sh
     1.6. Nach akzeptieren der Lizenzbedingungen fragt er, ob der default install pfad korrekt ist:
         Miniconda3 will now be installed into this location:
         /some/path/miniconda3
@@ -22,21 +22,21 @@ Am besten miniconda auf dem Server installieren! Dann kann man ganz entspannt Py
         - Or specify a different location below
     
     Stattdessen dann
-        [/some/path/miniconda3] >>>  /localdata/Schmidtchen/miniconda/miniconda3
+        [/some/path/miniconda3] >>>  /localdata/username/miniconda/miniconda3
 
     1.7. Nach install einmal checken ob alles geklappt hat:
         which python
-    sollte '/localdata/Schmidtchen/miniconda/miniconda3/bin/python' zurückgeben.
+    sollte '/localdata/username/miniconda/miniconda3/bin/python' zurückgeben.
 """
 
 ### PYTORCH SETUP ###
 """
-    2.1. Für jede pytorch Version, die benutzt wird eine eigene python 3.8 environment anlegen (aktuell ist pytorch1.10):
-        conda create --name pytorch1.10
+    2.1. Für jede pytorch Version, die benutzt wird eine eigene python 3.8 environment anlegen (aktuell ist pytorch2.1):
+        conda create --name pytorch2.1
     2.2. Aktivieren via
-        conda activate pytorch1.10
+        conda activate pytorch2.1
     2.3. Pytorch installieren! (https://pytorch.org/get-started/locally/)
-        pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio===0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+        pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     2.4. Schauen, ob's geklappt hat:
         python                              # python starten
         import torch                        # wenn das keinen Fehler gibt, hat's geklappt
